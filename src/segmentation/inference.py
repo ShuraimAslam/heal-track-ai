@@ -18,12 +18,7 @@ transform = transforms.Compose([
     transforms.ToTensor(),
 ])
 
-def segment_wound(image_path: str) -> np.ndarray:
-    """
-    Input: path to wound image
-    Output: binary mask (numpy array)
-    """
-    image = Image.open(image_path).convert("RGB")
+def segment_wound(image: Image.Image) -> np.ndarray:
     input_tensor = transform(image).unsqueeze(0).to(DEVICE)
 
     with torch.no_grad():

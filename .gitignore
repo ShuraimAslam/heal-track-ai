@@ -33,4 +33,7 @@ congig.py
 # =====================
 .DS_Store
 Thumbs.db
-.vscode/
+# =====================
+# Results & Outputs
+# =====================
+outputs/
