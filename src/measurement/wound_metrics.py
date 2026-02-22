@@ -28,3 +28,17 @@ def compute_bounding_box(mask: np.ndarray):
     y_min, y_max = ys.min(), ys.max()
 
     return int(x_min), int(y_min), int(x_max), int(y_max)
+
+def compute_wound_metrics(mask: np.ndarray) -> dict:
+        """
+    Aggregates all wound measurements into a single dictionary
+    """
+        pixel_area = compute_pixel_area(mask)
+        area_ratio = compute_area_ratio(mask)
+        bounding_box = compute_bounding_box(mask)
+
+        return {
+        "pixel_area": pixel_area,
+        "area_ratio": round(area_ratio, 4),
+        "bounding_box": bounding_box
+    }

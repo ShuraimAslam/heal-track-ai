@@ -1,50 +1,34 @@
-import cv2
+import torch
+from torchvision import transforms
+from PIL import Image
 import numpy as np
 
+from src.segmentation.unet import UNet
 
-class SegmentationInference:
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+MODEL_PATH = "checkpoints/unet_baseline.pth"
+
+# Load model once
+model = UNet().to(DEVICE)
+model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
+model.eval()
+
+transform = transforms.Compose([
+    transforms.Resize((256, 256)),
+    transforms.ToTensor(),
+])
+
+def segment_wound(image_path: str) -> np.ndarray:
     """
-    Segmentation inference wrapper.
-
-    Responsibility:
-    - Load image from path
-    - Preprocess image
-    - Run segmentation model (placeholder for now)
-    - Return binary mask
+    Input: path to wound image
+    Output: binary mask (numpy array)
     """
+    image = Image.open(image_path).convert("RGB")
+    input_tensor = transform(image).unsqueeze(0).to(DEVICE)
 
-    def __init__(self, image_size=(256, 256)):
-        self.image_size = image_size
-        # NOTE: real model will be loaded here later
+    with torch.no_grad():
+        output = model(input_tensor)
+        output = torch.sigmoid(output)
+        mask = (output > 0.5).float()
 
-    def preprocess(self, image):
-        """
-        Resize and normalize image.
-        """
-        image = cv2.resize(image, self.image_size)
-        image = image.astype("float32") / 255.0
-        return image
-
-    def predict(self, image_path):
-        """
-        Run segmentation inference on a single image.
-
-        Returns:
-        - binary mask (numpy array, 0/1)
-        """
-        # 1. Load image
-        image = cv2.imread(image_path)
-        if image is None:
-            raise ValueError(f"Failed to load image: {image_path}")
-
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
-        # 2. Preprocess
-        image = self.preprocess(image)
-
-        # 3. Placeholder segmentation logic
-        # (simple intensity threshold to simulate a model)
-        gray = cv2.cvtColor((image * 255).astype("uint8"), cv2.COLOR_RGB2GRAY)
-        _, mask = cv2.threshold(gray, 40, 1, cv2.THRESH_BINARY)
-
-        return mask
+    return mask.squeeze().cpu().numpy()

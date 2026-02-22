@@ -15,7 +15,7 @@ print(">>> Imports completed")
 # -------------------------
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-DATASET_ROOT = "D:/AIML/dataset/Foot Ulcer Segmentation Challenge"
+DATASET_ROOT = "/content/drive/MyDrive/Foot Ulcer Segmentation Challenge"
 
 TRAIN_IMAGES = os.path.join(DATASET_ROOT, "train", "images")
 TRAIN_LABELS = os.path.join(DATASET_ROOT, "train", "labels")
@@ -26,8 +26,8 @@ VAL_LABELS = os.path.join(DATASET_ROOT, "validation", "labels")
 CHECKPOINT_DIR = "checkpoints"
 os.makedirs(CHECKPOINT_DIR, exist_ok=True)
 
-BATCH_SIZE = 2
-EPOCHS = 2
+BATCH_SIZE = 8
+EPOCHS = 10
 LEARNING_RATE = 1e-4
 
 

@@ -26,3 +26,22 @@ def generate_insight(reasoning_output: dict) -> str:
         message += " A clinical review is recommended."
 
     return message
+
+def generate_clinical_report(metrics: dict, decision: dict) -> str:
+    insight = generate_insight(decision)
+
+    report = f"""
+Wound Analysis Report
+---------------------
+Estimated wound area (pixels): {metrics['pixel_area']}
+Area ratio: {metrics['area_ratio']}
+
+Risk Level: {decision['risk_level']}
+Healing Status: {decision['healing_status']}
+Clinician Review Recommended: {decision['recommend_clinician_review']}
+
+Insight:
+{insight}
+""".strip()
+
+    return report

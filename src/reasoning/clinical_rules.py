@@ -1,7 +1,9 @@
-def assess_wound_size(area_ratio: float) -> str:
+def assess_wound_size(metrics: dict) -> str:
     """
     Categorize wound size based on area ratio.
     """
+    area_ratio = metrics["area_ratio"]
+
     if area_ratio < 0.05:
         return "small"
     elif area_ratio < 0.15:
@@ -34,22 +36,19 @@ def assess_healing_status(size_category: str) -> str:
         return "concerning"
 
 
-def clinical_reasoning(area_ratio: float) -> dict:
+def assess_wound_risk(metrics: dict) -> dict:
     """
-    Main reasoning function.
-    Converts measurement into clinical interpretation.
+    Main clinical reasoning entry point for the pipeline.
     """
-    size_category = assess_wound_size(area_ratio)
+    size_category = assess_wound_size(metrics)
     risk_level = assess_risk_level(size_category)
     healing_status = assess_healing_status(size_category)
 
-    recommend_review = True if risk_level == "high" else False
-
-    reason_summary = f"Wound classified as {size_category} based on area ratio"
+    recommend_review = risk_level in ("medium", "high")
 
     return {
-        "risk_level": risk_level,
+        "risk_level": risk_level.capitalize(),
         "healing_status": healing_status,
         "recommend_clinician_review": recommend_review,
-        "reason_summary": reason_summary
+        "size_category": size_category
     }
