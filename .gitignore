@@ -1,17 +1,36 @@
+# =====================
 # Python
+# =====================
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.venv/
 venv/
 
-# Model artifacts (do not push weights)
-checkpoints/*.pth
-
-# Logs (generated)
-logs/
-
-# Dataset (local only)
+# =====================
+# ML artifacts (DO NOT COMMIT)
+# =====================
+checkpoints/
+*.pth
 data/
+sample_data/
 
-# OS
+# =====================
+# Notebooks / Colab
+# =====================
+.ipynb_checkpoints/
+*.patch
+
+# =====================
+# Tests & experiments
+# =====================
+test*.py
+congig.py
+
+# =====================
+# OS / Editor
+# =====================
 .DS_Store
 Thumbs.db
+.vscode/
