@@ -1,47 +1,48 @@
-def generate_insight(reasoning_output: dict) -> str:
-    """
-    Convert reasoning output into a human-readable clinical insight.
-    """
+def generate_clinical_report(metrics: dict, risk: dict):
+    confidence = risk["confidence"]
+    risk_level = risk["risk_level"]
 
-    risk = reasoning_output.get("risk_level")
-    status = reasoning_output.get("healing_status")
-    recommend = reasoning_output.get("recommend_clinician_review")
+    lines = []
 
-    # Base message
-    if status == "improving":
-        message = "The wound appears to be healing well."
-    elif status == "stable":
-        message = "The wound condition appears stable at this time."
+    lines.append("AI-Assisted Wound Analysis Summary")
+    lines.append("-" * 40)
+
+    lines.append(f"Wound Area (pixels): {metrics['wound_area']}")
+    lines.append(f"Area Ratio: {metrics['area_ratio']}")
+    lines.append(f"Detected Regions: {metrics['num_regions']}")
+    lines.append(f"Segmentation Confidence: {confidence.capitalize()}")
+
+    lines.append("\nRisk Assessment:")
+    lines.append(f"Overall Risk Level: {risk_level}")
+    lines.append(f"Risk Score: {risk['risk_score']} / 100")
+
+    lines.append("\nInterpretation:")
+
+    if confidence == "high":
+        lines.append(
+            "The segmentation quality is adequate, and the risk assessment "
+            "is based on geometric and structural characteristics of the wound."
+        )
     else:
-        message = "The wound appears concerning and requires attention."
+        lines.append(
+            "The system detected a wound region, but confidence in the "
+            "segmentation is limited. Risk assessment has been escalated "
+            "to avoid underestimation."
+        )
 
-    # Risk-based augmentation
-    if risk == "medium":
-        message += " Continued monitoring is advised."
-    elif risk == "high":
-        message += " The wound is classified as high risk."
+    if risk_level in ["Moderate", "High"]:
+        lines.append(
+            "\nRecommendation: Clinical review is advised for further evaluation."
+        )
+    else:
+        lines.append(
+            "\nRecommendation: Continue monitoring. This assessment is "
+            "intended for decision support only."
+        )
 
-    # Action recommendation
-    if recommend:
-        message += " A clinical review is recommended."
+    lines.append(
+        "\nDisclaimer: This is a research prototype and should not be used "
+        "for medical diagnosis or treatment decisions."
+    )
 
-    return message
-
-def generate_clinical_report(metrics: dict, decision: dict) -> str:
-    insight = generate_insight(decision)
-
-    report = f"""
-Wound Analysis Report
----------------------
-Estimated wound area (pixels): {metrics['pixel_area']}
-Area ratio: {metrics['area_ratio']}
-
-Risk Level: {decision['risk_level']}
-Healing Status: {decision['healing_status']}
-Clinician Review Recommended: {decision['recommend_clinician_review']}
-
-Insight:
-{insight}
-""".strip()
-
-    return report
+    return "\n".join(lines)

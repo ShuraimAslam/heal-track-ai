@@ -1,44 +1,48 @@
 import numpy as np
 import cv2
 
-def compute_pixel_area(mask: np.ndarray) -> int:
+def compute_wound_metrics(mask: np.ndarray):
     """
-    Counts number of wound pixels (mask == 1)
+    mask: binary mask (0 or 1)
     """
-    return int(np.sum(mask))
 
-def compute_area_ratio(mask: np.ndarray) -> float:
-    """
-    Ratio of wound pixels to total image pixels
-    """
-    total_pixels = mask.shape[0] * mask.shape[1]
-    wound_pixels = np.sum(mask)
-    return float(wound_pixels / total_pixels)
+    mask = (mask > 0).astype(np.uint8)
+    h, w = mask.shape
+    image_area = h * w
 
-def compute_bounding_box(mask: np.ndarray):
-    """
-    Returns bounding box of wound as (x_min, y_min, x_max, y_max)
-    """
-    ys, xs = np.where(mask > 0)
+    # --- Area ---
+    wound_area = int(mask.sum())
+    area_ratio = wound_area / image_area if image_area > 0 else 0
 
-    if len(xs) == 0 or len(ys) == 0:
-        return None
+    # --- Contours ---
+    contours, _ = cv2.findContours(
+        mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+    )
 
-    x_min, x_max = xs.min(), xs.max()
-    y_min, y_max = ys.min(), ys.max()
+    num_regions = len(contours)
 
-    return int(x_min), int(y_min), int(x_max), int(y_max)
+    perimeter = sum(cv2.arcLength(cnt, True) for cnt in contours)
 
-def compute_wound_metrics(mask: np.ndarray) -> dict:
-        """
-    Aggregates all wound measurements into a single dictionary
-    """
-        pixel_area = compute_pixel_area(mask)
-        area_ratio = compute_area_ratio(mask)
-        bounding_box = compute_bounding_box(mask)
+    # --- Shape complexity ---
+    shape_complexity = (
+        (perimeter ** 2) / (wound_area + 1e-6)
+        if wound_area > 0 else 0
+    )
 
-        return {
-        "pixel_area": pixel_area,
+    # --- Segmentation confidence (heuristic) ---
+    if wound_area == 0:
+        confidence = "none"
+    elif area_ratio < 0.005:
+        confidence = "low"
+    elif area_ratio < 0.02:
+        confidence = "medium"
+    else:
+        confidence = "high"
+
+    return {
+        "wound_area": wound_area,
         "area_ratio": round(area_ratio, 4),
-        "bounding_box": bounding_box
+        "shape_complexity": round(shape_complexity, 2),
+        "num_regions": num_regions,
+        "segmentation_confidence": confidence
     }

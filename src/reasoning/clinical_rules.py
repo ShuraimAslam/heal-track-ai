@@ -1,54 +1,56 @@
-def assess_wound_size(metrics: dict) -> str:
-    """
-    Categorize wound size based on area ratio.
-    """
+def assess_wound_risk(metrics: dict):
+    score = 0
+
     area_ratio = metrics["area_ratio"]
+    shape_complexity = metrics["shape_complexity"]
+    num_regions = metrics["num_regions"]
+    confidence = metrics["segmentation_confidence"]
 
-    if area_ratio < 0.05:
-        return "small"
-    elif area_ratio < 0.15:
-        return "medium"
+    # --- Area contribution ---
+    if area_ratio > 0.05:
+        score += 30
+    elif area_ratio > 0.02:
+        score += 20
+    elif area_ratio > 0.005:
+        score += 10
+
+    # --- Shape complexity ---
+    if shape_complexity > 3000:
+        score += 20
+    elif shape_complexity > 1500:
+        score += 10
+
+    # --- Fragmentation ---
+    if num_regions >= 3:
+        score += 20
+    elif num_regions == 2:
+        score += 10
+
+    # --- Confidence penalty ---
+    if confidence == "low":
+        score += 25
+    elif confidence == "none":
+        score += 40
+
+    # --- Initial risk level ---
+    if score >= 70:
+        risk_level = "High"
+    elif score >= 35:
+        risk_level = "Moderate"
     else:
-        return "large"
+        risk_level = "Low"
 
+    # --- CRITICAL SAFETY RULES ---
+    # 1. If a wound exists, LOW risk is not allowed
+    if area_ratio > 0.005 and risk_level == "Low":
+        risk_level = "Moderate"
 
-def assess_risk_level(size_category: str) -> str:
-    """
-    Map wound size to clinical risk level.
-    """
-    if size_category == "small":
-        return "low"
-    elif size_category == "medium":
-        return "medium"
-    else:
-        return "high"
-
-
-def assess_healing_status(size_category: str) -> str:
-    """
-    Estimate healing status based on wound size.
-    """
-    if size_category == "small":
-        return "improving"
-    elif size_category == "medium":
-        return "stable"
-    else:
-        return "concerning"
-
-
-def assess_wound_risk(metrics: dict) -> dict:
-    """
-    Main clinical reasoning entry point for the pipeline.
-    """
-    size_category = assess_wound_size(metrics)
-    risk_level = assess_risk_level(size_category)
-    healing_status = assess_healing_status(size_category)
-
-    recommend_review = risk_level in ("medium", "high")
+    # 2. If confidence is low/none, never allow LOW
+    if confidence in ["low", "none"] and risk_level == "Low":
+        risk_level = "Moderate"
 
     return {
-        "risk_level": risk_level.capitalize(),
-        "healing_status": healing_status,
-        "recommend_clinician_review": recommend_review,
-        "size_category": size_category
+        "risk_level": risk_level,
+        "risk_score": score,
+        "confidence": confidence
     }
