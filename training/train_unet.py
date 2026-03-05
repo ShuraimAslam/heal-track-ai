@@ -7,6 +7,9 @@ from torch.utils.data import DataLoader
 
 from src.data.dataset import WoundSegmentationDataset
 from src.segmentation.unet import UNet
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
+import numpy as np
 
 print(">>> Imports completed")
 
@@ -27,8 +30,29 @@ CHECKPOINT_DIR = "checkpoints"
 os.makedirs(CHECKPOINT_DIR, exist_ok=True)
 
 BATCH_SIZE = 8
-EPOCHS = 10
+EPOCHS = 50
 LEARNING_RATE = 1e-4
+
+# -------------------------
+# Augmentation
+# -------------------------
+train_transform = A.Compose([
+    A.Resize(256, 256),
+    A.HorizontalFlip(p=0.5),
+    A.VerticalFlip(p=0.3),
+    A.RandomRotate90(p=0.5),
+    A.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, p=0.5),
+    A.GaussNoise(p=0.3),
+    A.ElasticTransform(p=0.2),
+    A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
+    ToTensorV2()
+])
+
+val_transform = A.Compose([
+    A.Resize(256, 256),
+    A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
+    ToTensorV2()
+])
 
 
 # -------------------------
@@ -53,21 +77,21 @@ def train():
     print(">>> Using device:", DEVICE)
 
     # Dataset
-    train_dataset = WoundSegmentationDataset(TRAIN_IMAGES, TRAIN_LABELS)
-    val_dataset = WoundSegmentationDataset(VAL_IMAGES, VAL_LABELS)
+    train_dataset = WoundSegmentationDataset(TRAIN_IMAGES, TRAIN_LABELS, transform=train_transform)
+    val_dataset = WoundSegmentationDataset(VAL_IMAGES, VAL_LABELS, transform=val_transform)
 
     train_loader = DataLoader(
         train_dataset,
         batch_size=BATCH_SIZE,
         shuffle=True,
-        num_workers=0,   # Windows-safe
+        num_workers=2,   # Colab-optimized
     )
 
     val_loader = DataLoader(
         val_dataset,
         batch_size=BATCH_SIZE,
         shuffle=False,
-        num_workers=0,
+        num_workers=2,
     )
 
     print(">>> DataLoaders ready")
@@ -76,8 +100,11 @@ def train():
 
     # Model
     model = UNet().to(DEVICE)
-    criterion = nn.BCEWithLogitsLoss()
+    pos_weight = torch.tensor([5.0]).to(DEVICE)
+    criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode='max', factor=0.5, patience=5, verbose=True)
 
     best_dice = 0.0
 
@@ -120,17 +147,21 @@ def train():
 
         avg_val_dice = val_dice / len(val_loader)
 
+        scheduler.step(avg_val_dice)
+
         print(
-            f"Epoch {epoch+1} | "
-            f"Train Loss: {avg_train_loss:.4f} | "
-            f"Val Dice: {avg_val_dice:.4f}"
+            f"Epoch {epoch+1} | Loss: {avg_train_loss:.4f} | "
+            f"Val Dice: {avg_val_dice:.4f} | LR: {optimizer.param_groups[0]['lr']:.6f}"
         )
+
+        # Save every epoch as backup (in case session dies)
+        torch.save(model.state_dict(), os.path.join(CHECKPOINT_DIR, f"unet_epoch_{epoch+1}.pth"))
 
         if avg_val_dice > best_dice:
             best_dice = avg_val_dice
             torch.save(
                 model.state_dict(),
-                os.path.join(CHECKPOINT_DIR, "unet_baseline.pth"),
+                os.path.join(CHECKPOINT_DIR, "unet_best.pth"),
             )
             print("  💾 Best model saved")
 

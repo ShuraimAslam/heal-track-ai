@@ -35,10 +35,7 @@ def postprocess_mask(mask: np.ndarray) -> np.ndarray:
 
     mask = mask.astype(np.uint8)
 
-    kernel = np.ones((5, 5), np.uint8)
-
-    # Remove tiny noise
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+    kernel = np.ones((3, 3), np.uint8)
 
     # Fill holes inside wound
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)

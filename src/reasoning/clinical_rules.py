@@ -26,12 +26,6 @@ def assess_wound_risk(metrics: dict):
     elif num_regions == 2:
         score += 10
 
-    # --- Confidence penalty ---
-    if confidence == "low":
-        score += 25
-    elif confidence == "none":
-        score += 40
-
     # --- Initial risk level ---
     if score >= 70:
         risk_level = "High"
@@ -52,5 +46,6 @@ def assess_wound_risk(metrics: dict):
     return {
         "risk_level": risk_level,
         "risk_score": score,
-        "confidence": confidence
+        "confidence": confidence,
+        "needs_clinical_review": confidence in ["low", "none"]
     }
