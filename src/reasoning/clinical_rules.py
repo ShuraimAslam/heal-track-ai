@@ -7,17 +7,18 @@ def assess_wound_risk(metrics: dict):
     confidence = metrics["segmentation_confidence"]
 
     # --- Area contribution ---
-    if area_ratio > 0.05:
+    if area_ratio >= 0.03:   # >= 3% of image is considered severe
+        score += 50
+    elif area_ratio >= 0.01: # >= 1% is moderate
         score += 30
-    elif area_ratio > 0.02:
-        score += 20
-    elif area_ratio > 0.005:
-        score += 10
+    elif area_ratio >= 0.002: # small wound
+        score += 15
 
     # --- Shape complexity ---
-    if shape_complexity > 3000:
+    # A perfect circle has complexity ~12.5. Highly irregular shapes indicate higher risk.
+    if shape_complexity >= 40:
         score += 20
-    elif shape_complexity > 1500:
+    elif shape_complexity >= 20:
         score += 10
 
     # --- Fragmentation ---
@@ -27,9 +28,9 @@ def assess_wound_risk(metrics: dict):
         score += 10
 
     # --- Initial risk level ---
-    if score >= 70:
+    if score >= 50:
         risk_level = "High"
-    elif score >= 35:
+    elif score >= 25:
         risk_level = "Moderate"
     else:
         risk_level = "Low"

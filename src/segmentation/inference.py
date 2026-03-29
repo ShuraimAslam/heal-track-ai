@@ -10,7 +10,7 @@ from src.segmentation.unet import UNet
 # Device & Model
 # ----------------------------
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-MODEL_PATH = "checkpoints/unet_baseline.pth"
+MODEL_PATH = r"D:\AIML\heal-track-ai\checkpoints\unet_baseline.pth"
 
 model = UNet().to(DEVICE)
 model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
