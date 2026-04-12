@@ -34,8 +34,3 @@ The system is designed as a modular pipeline so that each stage can evolve indep
 - Code-first, data-second approach
 - Resume and research ready
 
-## Status
-
-- Repository initialized
-- Modular structure created
-- Next step: implement measurement layer
